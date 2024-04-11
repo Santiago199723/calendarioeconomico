@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário Econômico</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: url('fundo.png') no-repeat center center fixed;
+    background-size: cover;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .calendar-container {
+    width: 650px;
+    height: 467px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    margin-right: 20px;
+  }
+
+  .filters {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .poweredBy {
+    text-align: center;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-top: 1px solid #ccc;
+  }
+
+  .poweredBy a {
+    color: #06529D;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  iframe {
+    width: 100%;
+    height: calc(100% - 40px); /* Ajuste para deixar espaço para os filtros */
+    border: none;
+  }
+
+  .event-info {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .event-info h3 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #06529D;
+  }
+
+  .event-info ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .event-info li {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .event-info li strong {
+    color: #333;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="calendar-container">
+    <div class="filters">
+      <label for="filterCountry">Países:</label>
+      <select id="filterCountry">
+        <option value="">Todos</option>
+        <option value="110">EUA</option>
+        <option value="17">Alemanha</option>
+        <!-- Adicione mais opções conforme necessário -->
+      </select>
+      <button onclick="applyFilters()">Aplicar</button>
+    </div>
+    <iframe id="calendar-frame" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+  </div>
+</div>
+
+<script>
+  function applyFilters() {
+    var iframe = document.getElementById('calendar-frame');
+    var countryFilter = document.getElementById('filterCountry').value;
+    var filters = {
+      columns: 'exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous',
+      features: 'datepicker,timezone',
+      countries: countryFilter,
+      calType: 'day',
+      timeZone: '12',
+      lang: '12'
+    };
+    var filterString = Object.keys(filters).map(function(key) {
+      return key + '=' + filters[key];
+    }).join('&');
+    iframe.src = 'https://sslecal2.investing.com?' + filterString;
+
+    // Atualiza as informações dos eventos
+    updateEventInfo();
+  }
+
+  function updateEventInfo() {
+    // Array com os eventos que queremos acompanhar
+    var importantEvents = [
+      'Estoques de petróleo bruto',
+      'Seguro Desemprego',
+      'IPC E-NÚCLEOS'
+    ];
+
+    // Seleciona o iframe
+    var iframe = document.getElementById('calendar-frame');
+
+    // Espera o iframe carregar
+    iframe.onload = function() {
+      // Captura todos os eventos no calendário
+      var events = iframe.contentDocument.querySelectorAll('.js-event-item');
+
+      // Array para armazenar os eventos importantes encontrados
+      var importantEventsFound = [];
+
+      // Itera sobre os eventos
+      events.forEach(function(event) {
+        // Extrai o título do evento
+        var title = event.querySelector('.left.event').innerText;
+
+        // Verifica se o título do evento está na lista de eventos importantes
+        if (importantEvents.includes(title)) {
+          importantEventsFound.push({
+            title: title,
+            time: event.querySelector('.time').innerText,
+            impact: event.querySelector('.flagCur').innerText,
+            actual: event.querySelector('.bold').innerText,
+            forecast: event.querySelector('.fore').innerText,
+            previous: event.querySelector('.prev').innerText
+          });
+        }
+      });
+
+      // Atualiza a janela de informações dos eventos importantes
+      var eventInfo = document.getElementById('eventInfo');
+      var ul = eventInfo.querySelector('ul');
+      ul.innerHTML = ''; // Limpa a lista
+
+      importantEventsFound.forEach(function(event) {
+        var li = document.createElement('li');
+        li.innerHTML = '<strong>' + event.title + '</strong><br>' +
+                       'Hora: ' + event.time + '<br>' +
+                       'Impacto: ' + event.impact + '<br>' +
+                       'Atual: ' + event.actual + '<br>' +
+                       'Previsão: ' + event.forecast + '<br>' +
+                       'Anterior: ' + event.previous;
+        ul.appendChild(li);
+      });
+    };
+  }
+
+  // Chama a função para aplicar os filtros e atualizar as informações dos eventos ao carregar a página
+  window.onload = function() {
+    applyFilters();
+  };
+</script>
+</body>
+</html>
